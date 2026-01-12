@@ -4,6 +4,7 @@ import { BiSend } from "react-icons/bi";
 import { LuMessageCircle } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import api from "../../utils/axios.js";
 import userConvorsation from "../../Zustand/useConvorsation";
 import { useAuth } from "../../context/AuthContext";
 import notify from "../../assets/sound/new-message-2-125765.mp3";
@@ -19,14 +20,14 @@ export const MessageContainer = () => {
   } = userConvorsation();
   const { authUser } = useAuth();
   const navigate = useNavigate();
-  const { Socket } = usesocketContext();
+  const { socket } = usesocketContext();
 
   const [loading, setLoading] = useState(false);
   const [sendData, setSendData] = useState("");
   const lastMessageRef = useRef(null);
 
   useEffect(() => {
-    if (!Socket) return;
+    if (!socket) return;
 
     const handleNewMessage = (newMessage) => {
       if (newMessage.senderId !== authUser._id) {
@@ -37,10 +38,10 @@ export const MessageContainer = () => {
       setMessage((prev) => [...prev, newMessage]);
     };
 
-    Socket.on("newMessage", handleNewMessage);
+      socket.on("newMessage", handleNewMessage);
 
     return () => {
-      Socket.off("newMessage", handleNewMessage);
+      socket.off("newMessage", handleNewMessage);
     };
   }, [Socket, authUser._id, setMessage]);
 
@@ -54,9 +55,7 @@ export const MessageContainer = () => {
     if (!selectedConversation?._id) return;
     setLoading(true);
     try {
-      const res = await axios.get(`/api/message/${selectedConversation._id}`, {
-        withCredentials: true,
-      });
+      const res = await api.get(`/api/message/${selectedConversation._id}`);
       if (res.data?.success) {
         setMessage(res.data.messages);
       }
@@ -75,16 +74,10 @@ export const MessageContainer = () => {
     if (!sendData.trim()) return;
 
     try {
-      const response = await axios.post(
-        `http://localhost:3000/api/message/send/${selectedConversation._id}`,
-        {
-          message: sendData,
-          receiverId: selectedConversation._id,
-        },
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await api.post(`/api/message/send/${selectedConversation._id}`, {
+        message: sendData,
+        receiverId: selectedConversation._id,
+      });
 
       const newMessage = response.data.data;
 
