@@ -8,15 +8,19 @@ import messageRouter from './route/messageRoute.js';
 import userRouter from './route/userRoute.js';
 
 dotenv.config(); // Load .env variables
+// Load frontend URL from environment (set this in production)
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // Import app and server created in Socket.js
 import { app, server } from './socket/Socket.js';
 
-//  CORS Middleware - Make sure it matches frontend port exactly
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+//  CORS Middleware - allow frontend origin (use env var in production)
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+  })
+);
 
 //  General Middleware
 app.use(express.json());

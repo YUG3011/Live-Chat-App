@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import api from "../utils/axios.js";
 
 export const Log = () => {
   const { setauthUser } = useAuth();
@@ -21,10 +22,9 @@ export const Log = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const login = await axios.post(
-        "http://localhost:3000/api/auth/login",
+      const login = await api.post(
+        "/api/auth/login",
         userInput,
-        { withCredentials: true }
       );
 
       const data = login.data;
@@ -56,6 +56,8 @@ export const Log = () => {
             required
             id="email"
             type="email"
+            name="email"
+            autoComplete="email"
             onChange={handleInput}
             placeholder="Email"
             className="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#81ffa9] transition"
@@ -64,6 +66,8 @@ export const Log = () => {
             required
             id="password"
             type="password"
+            name="password"
+            autoComplete="current-password"
             onChange={handleInput}
             placeholder="Password"
             className="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#81ffa9] transition"

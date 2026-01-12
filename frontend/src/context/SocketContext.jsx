@@ -1,47 +1,45 @@
-import { createContext,useState,useEffect,useContext } from 'react';
-import io from 'socket.io-client';
-import { useAuth } from './AuthContext';
+import { createContext, useState, useEffect, useContext } from "react";
+import io from "socket.io-client";
+import { useAuth } from "./AuthContext";
 
 const SocketContext = createContext();
 
-export const usesocketContext= ()=>{
-        return useContext(SocketContext);
+export const usesocketContext = () => {
+  return useContext(SocketContext);
 };
 
-export const SocketContextProvider=({children})=>{
-    const [Socket, setSocket] = useState(null)
+export const SocketContextProvider = ({ children }) => {
+  const [socket, setSocket] = useState(null);
+  const [onlineUser, setOnlineUser] = useState([]);
 
-    const [OnlineUser, setOnlineUser] = useState([]);
+  const { authUser } = useAuth();
 
-    const {authUser}= useAuth();
+  useEffect(() => {
+    if (!authUser) return;
 
-    useEffect(() => {
-            if(authUser){
-                const Socket = io("http://localhost:3000/",{
+    const socketInstance = io(import.meta.env.VITE_BACKEND_URL, {
+      withCredentials: true,
+      transports: ["websocket"],
+      query: {
+        userId: authUser._id,
+      },
+    });
 
-                    query:{
-                        userId:authUser?._id,
-                    }
-                })
+    socketInstance.on("getonlineuser", (users) => {
+      setOnlineUser(users);
+    });
 
-                Socket.on("getonlineuser",(users)=>{
-                    setOnlineUser(users)
-                });
-                setSocket(Socket);
-                return()=>Socket.close();
-             }
-             else{
-                if(Socket){
-                    Socket.close();
-                    setSocket(null)
-                }
-             }
-    }, [authUser]);
+    setSocket(socketInstance);
 
-    return(
-    
-    <SocketContext.Provider value={{Socket , OnlineUser}}>
-        {children}
+    return () => {
+      socketInstance.disconnect();
+      setSocket(null);
+    };
+  }, [authUser]);
+
+  return (
+    <SocketContext.Provider value={{ socket, onlineUser }}>
+      {children}
     </SocketContext.Provider>
-    )
-}
+  );
+};

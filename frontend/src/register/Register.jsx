@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import api from "../utils/axios.js";
 
 export const Register = () => {
   const { setauthUser } = useAuth();
@@ -38,10 +39,9 @@ export const Register = () => {
     }
 
     try {
-      const register = await axios.post(
-        "http://localhost:3000/api/auth/register",
+      const register = await api.post(
+        "/api/auth/register",
         userInput,
-        { withCredentials: true }
       );
 
       const data = register.data;
@@ -87,6 +87,8 @@ export const Register = () => {
           required
           id="email"
           type="email"
+          name="email"
+          autoComplete="email"
           onChange={handleInput}
           placeholder="Email"
           className="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#81ffa9] transition"
@@ -95,6 +97,8 @@ export const Register = () => {
           required
           id="password"
           type="password"
+          name="password"
+          autoComplete="new-password"
           onChange={handleInput}
           placeholder="Password"
           className="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#81ffa9] transition"
@@ -103,6 +107,8 @@ export const Register = () => {
           required
           id="confirmpassword"
           type="password"
+          name="confirmpassword"
+          autoComplete="new-password"
           onChange={handleInput}
           placeholder="Confirm Password"
           className="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#81ffa9] transition"

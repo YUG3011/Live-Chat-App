@@ -1,11 +1,8 @@
-// ✅ All your imports stay the same...
-import axios from "axios";
+import api from "../../utils/axios.js";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoMdArrowRoundBack } from "react-icons/io";
 import { FaSearch } from "react-icons/fa";
-import { VscAccount } from "react-icons/vsc";
-import { RiLogoutCircleLine } from "react-icons/ri";
 import { CgProfile } from "react-icons/cg";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
@@ -13,22 +10,22 @@ import userConvorsation from "../../Zustand/useConvorsation";
 import { usesocketContext } from "../../context/SocketContext";
 
 export const SideMessageBar = () => {
-  // ✅ Your logic is untouched
   const { authUser, setauthUser } = useAuth();
-  const { OnlineUser, Socket } = usesocketContext();
+  const { socket, onlineUser } = usesocketContext();
   const navigate = useNavigate();
   const [searchInput, setsearchInput] = useState("");
   const [loading, setloading] = useState(false);
   const [chatUser, setchatUser] = useState([]);
   const [selectedUserId, setselectedUserId] = useState(null);
   const [searchUser, setsearchUser] = useState([]);
-  const { setSelectedConversation, messages, setMessage } = userConvorsation();
+  const { setSelectedConversation } = userConvorsation();
   const [newMessageUsers, setnewMessageUsers] = useState("");
 
-  const isUserOnline = (userId) => OnlineUser.includes(userId);
+  const isUserOnline = (userId) => onlineUser.includes(userId);
 
+  // Socket new message listener
   useEffect(() => {
-    if (!Socket) return;
+    if (!socket) return;
 
     const handleNewMessage = (newMessage) => {
       setnewMessageUsers(newMessage);
@@ -42,31 +39,38 @@ export const SideMessageBar = () => {
       }
     };
 
-    Socket.on("newMessage", handleNewMessage);
-    return () => {
-      Socket.off("newMessage", handleNewMessage);
-    };
-  }, [Socket]);
+    socket.on("newMessage", handleNewMessage);
+    return () => socket.off("newMessage", handleNewMessage);
+  }, [socket, chatUser, searchUser]);
 
+  // Fetch current chatters
   useEffect(() => {
     const chatUserHandle = async () => {
+      if (!authUser) return;
       setloading(true);
       try {
-        const res = await axios.get("/api/user/currentchatters");
+        const res = await api.get("/api/user/currentchatters");
         if (res.data?.success !== false) setchatUser(res.data);
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching current chatters:", error);
+        if (error.response?.status === 401) {
+          toast.error("Session expired. Please login again.");
+          localStorage.removeItem("chatapp");
+          setauthUser(null);
+          navigate("/login");
+        }
       }
       setloading(false);
     };
     chatUserHandle();
-  }, []);
+  }, [authUser]);
 
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
+    if (!searchInput.trim()) return;
     setloading(true);
     try {
-      const res = await axios.get(`/api/user/search?search=${searchInput}`);
+      const res = await api.get(`/api/user/search?search=${searchInput}`);
       if (res.data.success === false) {
         toast.info("User not found.");
       } else {
@@ -81,19 +85,19 @@ export const SideMessageBar = () => {
   const handleLogout = async () => {
     if (!window.confirm("Are you sure you want to log out?")) return;
     try {
-      const a = prompt("enter username");
-      if (a === authUser?.username) {
+      const usernameConfirm = prompt("Enter username to confirm logout");
+      if (usernameConfirm === authUser?.username) {
         setloading(true);
-        const res = await axios.post("http://localhost:3000/api/auth/logout");
+        const res = await api.post("/api/auth/logout");
         if (res.data.success !== false) {
           toast.info(res.data.message);
           localStorage.removeItem("chatapp");
           setauthUser(null);
           navigate("/login");
-          toast.success("log out succesfully");
+          toast.success("Logged out successfully");
         }
       } else {
-        toast.error("invalid username");
+        toast.error("Invalid username");
       }
     } catch (error) {
       console.error(error);
@@ -115,13 +119,12 @@ export const SideMessageBar = () => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center  text-black mb-2">
+      <div className="flex justify-between items-center text-black mb-2">
         <h2 className="text-lg font-semibold m-auto">My Chats</h2>
-
       </div>
 
       <form onSubmit={handleSearchSubmit} className="flex items-center mb-4">
-      <IoMdArrowRoundBack
+        <IoMdArrowRoundBack
           onClick={handlebackSearch}
           className="h-8 w-10 bg-white text-black hover:bg-black hover:text-white rounded-full cursor-pointer"
         />
@@ -130,7 +133,7 @@ export const SideMessageBar = () => {
           onChange={(e) => setsearchInput(e.target.value)}
           type="text"
           placeholder="Search chats"
-          className="border px-3 py-2 rounded-full w-full "
+          className="border px-3 py-2 rounded-full w-full"
         />
         <button
           type="submit"
