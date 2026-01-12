@@ -10,11 +10,16 @@ import debugRouter from './route/debugRoute.js';
 
 dotenv.config(); // Load .env variables
 // Load frontend URL from environment (set this in production).
-// Fallback to the deployed Vercel frontend domain so CORS/socket still work
-// if the env var isn't set on the host service.
-const FRONTEND_URL =
-  process.env.FRONTEND_URL ||
-  'https://live-chat-app-ivory.vercel.app/';
+// You can also set `ALLOWED_ORIGINS` as a comma-separated list to allow
+// multiple frontend domains (useful for Vercel preview deployments).
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://live-chat-app-ivory.vercel.app';
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS && process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())) || [
+  FRONTEND_URL,
+  // keep common local dev origins
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
 
 // Import app and server created in Socket.js
 import { app, server } from './socket/Socket.js';
@@ -22,7 +27,14 @@ import { app, server } from './socket/Socket.js';
 //  CORS Middleware - allow frontend origin (use env var in production)
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: function(origin, callback) {
+      // allow requests with no origin (like curl or server-to-server)
+      if (!origin) return callback(null, true);
+      if (ALLOWED_ORIGINS.indexOf(origin) !== -1) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS policy: Origin not allowed'), false);
+    },
     credentials: true,
   })
 );

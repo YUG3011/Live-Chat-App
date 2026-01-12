@@ -6,15 +6,19 @@ const app = express();
 const server = http.createServer(app);
 
 // Allow frontend origin via environment variable (use FRONTEND_URL in production).
-// Provide a sensible fallback to the Vercel URL so deployed frontend can connect
-// even if the env var wasn't set yet.
-const FRONTEND_URL =
-  process.env.FRONTEND_URL ||
-  'https://live-chat-app-ivory.vercel.app/';
+// Also support ALLOWED_ORIGINS as a comma-separated list (useful for Vercel
+// preview deployments). We normalize to an array and pass it to socket.io CORS.
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://live-chat-app-ivory.vercel.app';
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS && process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())) || [
+  FRONTEND_URL,
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
 
 const io = new Server(server, {
   cors: {
-    origin: FRONTEND_URL,
+    origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
     credentials: true,
   },
