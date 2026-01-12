@@ -9,8 +9,12 @@ import userRouter from './route/userRoute.js';
 import debugRouter from './route/debugRoute.js';
 
 dotenv.config(); // Load .env variables
-// Load frontend URL from environment (set this in production)
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+// Load frontend URL from environment (set this in production).
+// Fallback to the deployed Vercel frontend domain so CORS/socket still work
+// if the env var isn't set on the host service.
+const FRONTEND_URL =
+  process.env.FRONTEND_URL ||
+  'https://live-chat-j7m9vmi89-yug3011s-projects.vercel.app';
 
 // Import app and server created in Socket.js
 import { app, server } from './socket/Socket.js';

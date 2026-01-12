@@ -5,8 +5,12 @@ import express from "express";
 const app = express();
 const server = http.createServer(app);
 
-// Allow frontend origin via environment variable (use FRONTEND_URL in production)
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+// Allow frontend origin via environment variable (use FRONTEND_URL in production).
+// Provide a sensible fallback to the Vercel URL so deployed frontend can connect
+// even if the env var wasn't set yet.
+const FRONTEND_URL =
+  process.env.FRONTEND_URL ||
+  'https://live-chat-j7m9vmi89-yug3011s-projects.vercel.app';
 
 const io = new Server(server, {
   cors: {
