@@ -6,6 +6,7 @@ import dbConnect from './DB/dbConnect.js';
 import authRouter from './route/authUser.js';
 import messageRouter from './route/messageRoute.js';
 import userRouter from './route/userRoute.js';
+import debugRouter from './route/debugRoute.js';
 
 dotenv.config(); // Load .env variables
 // Load frontend URL from environment (set this in production)
@@ -30,6 +31,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRouter);
 app.use('/api/message', messageRouter);
 app.use('/api/user', userRouter);
+app.use('/api/debug', debugRouter);
 
 //  Default health route
 app.get('/', (req, res) => {
