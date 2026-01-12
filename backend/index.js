@@ -14,7 +14,7 @@ dotenv.config(); // Load .env variables
 // if the env var isn't set on the host service.
 const FRONTEND_URL =
   process.env.FRONTEND_URL ||
-  'https://live-chat-j7m9vmi89-yug3011s-projects.vercel.app';
+  'https://live-chat-app-ivory.vercel.app/';
 
 // Import app and server created in Socket.js
 import { app, server } from './socket/Socket.js';
