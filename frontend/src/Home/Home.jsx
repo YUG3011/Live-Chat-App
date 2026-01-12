@@ -4,28 +4,38 @@ import { SideMessageBar } from "./components/SideMessageBar";
 import { MessageContainer } from "./components/MessageContainer";
 import { VscAccount } from "react-icons/vsc";
 import { RiLogoutCircleLine } from "react-icons/ri";
-import axios from "axios";
+import api from "../../utils/axios.js";
+import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 export const Home = () => {
   const navigate = useNavigate();
-  const { authUser } = useAuth();
+  const { authUser, setauthUser } = useAuth();
+
   const handleLogout = async () => {
-    const a = confirm("Are you sure you want to logout?");
-    if (a === false) return;
-    let ans = prompt("enter your password")
-    if(ans === authUser.username){
-    const res = await axios.post("http://localhost:3000/api/auth/logout");
-    if (res.data.success) {
-      setauthUser(null);
-      toast.success("Logout successful");
+    try {
+      const a = confirm("Are you sure you want to logout?");
+      if (!a) return;
+
+      const ans = prompt("Enter your username to confirm logout");
+      if (ans !== authUser?.username) {
+        toast.error("Invalid username");
+        return;
+      }
+
+      const res = await api.post("/api/auth/logout");
+      if (res.data?.success !== false) {
+        setauthUser(null);
+        localStorage.removeItem("chatapp");
+        toast.success(res.data?.msg || "Logout successful");
+        navigate("/login");
+      } else {
+        toast.error(res.data?.msg || "Logout failed");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Network error while logging out");
     }
-    localStorage.removeItem("authToken");
-    navigate("/login");
-  }
-  else{
-    confirm("Invalid username");
-  }
   };
   return (
     <>
