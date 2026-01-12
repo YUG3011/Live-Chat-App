@@ -9,7 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 import userConvorsation from "../../Zustand/useConvorsation";
 import { usesocketContext } from "../../context/SocketContext";
 
-export const SideMessageBar = () => {
+export const SideMessageBar = ({ onSelectConversation }) => {
   const { authUser, setauthUser } = useAuth();
   const { socket, onlineUser } = usesocketContext();
   const navigate = useNavigate();
@@ -18,7 +18,8 @@ export const SideMessageBar = () => {
   const [chatUser, setchatUser] = useState([]);
   const [selectedUserId, setselectedUserId] = useState(null);
   const [searchUser, setsearchUser] = useState([]);
-  const { setSelectedConversation } = userConvorsation();
+  const { setSelectedConversation, messages, selectedConversation } =
+    userConvorsation();
   const [newMessageUsers, setnewMessageUsers] = useState("");
 
   const isUserOnline = (userId) => onlineUser.includes(userId);
@@ -29,14 +30,39 @@ export const SideMessageBar = () => {
 
     const handleNewMessage = (newMessage) => {
       setnewMessageUsers(newMessage);
-      const allUsers = [...chatUser, ...searchUser];
-      const sender = allUsers.find((u) => u._id === newMessage.senderId);
 
-      if (sender) {
-        toast.success(`${sender.username} sent you a message`);
-      } else {
-        toast.success("You received a new message");
-      }
+      // Update local chatUser ordering and unread counts
+      setchatUser((prev) => {
+        // copy previous list
+        let list = Array.isArray(prev) ? [...prev] : [];
+
+        // find the sender in existing lists (chat or search)
+        const idx = list.findIndex((u) => u._id === newMessage.senderId);
+
+        // If found, increment unread and move to front
+        if (idx !== -1) {
+          const sender = { ...list[idx] };
+          // ensure unread exists
+          sender.unread = (sender.unread || 0) + 1;
+          list.splice(idx, 1);
+          list.unshift(sender);
+          const senderName = sender.username || 'Someone';
+          toast.success(`${senderName} sent you a message`);
+          return list;
+        }
+
+        // If not found in chatUser, try searchUser (combine)
+        const allUsers = [...chatUser, ...searchUser];
+        const senderFromAll = allUsers.find((u) => u._id === newMessage.senderId);
+        if (senderFromAll) {
+          const newEntry = { ...senderFromAll, unread: 1 };
+          // place at front
+          return [newEntry, ...list];
+        }
+
+        toast.success('You received a new message');
+        return list;
+      });
     };
 
     socket.on("newMessage", handleNewMessage);
@@ -50,7 +76,13 @@ export const SideMessageBar = () => {
       setloading(true);
       try {
         const res = await api.get("/api/user/currentchatters");
-        if (res.data?.success !== false) setchatUser(res.data);
+        if (res.data?.success !== false) {
+          // initialize unread counts to 0 for each user
+          const usersWithUnread = Array.isArray(res.data)
+            ? res.data.map((u) => ({ ...u, unread: 0 }))
+            : [];
+          setchatUser(usersWithUnread);
+        }
       } catch (error) {
         console.error("Error fetching current chatters:", error);
         if (error.response?.status === 401) {
@@ -64,6 +96,24 @@ export const SideMessageBar = () => {
     };
     chatUserHandle();
   }, [authUser]);
+
+  // When messages update (e.g., current user sent a message), move the selected conversation to top
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    // if the current user was the sender, ensure the conversation is at top
+    if (last.senderId === authUser?._id && selectedConversation) {
+      setchatUser((prev) => {
+        const idx = prev.findIndex((u) => u._id === selectedConversation._id);
+        if (idx === -1) return prev;
+        const copy = [...prev];
+        const item = { ...copy[idx], unread: 0 };
+        copy.splice(idx, 1);
+        copy.unshift(item);
+        return copy;
+      });
+    }
+  }, [messages, selectedConversation, authUser?._id]);
 
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
@@ -109,6 +159,13 @@ export const SideMessageBar = () => {
     setSelectedConversation(user);
     setselectedUserId(user._id);
     setnewMessageUsers("");
+    // clear unread count for this conversation
+    setchatUser((prev) =>
+      prev.map((u) => (u._id === user._id ? { ...u, unread: 0 } : u))
+    );
+    if (typeof onSelectConversation === "function") {
+      onSelectConversation(user);
+    }
   };
 
   const handlebackSearch = () => {
@@ -118,15 +175,15 @@ export const SideMessageBar = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col h-full">
       <div className="flex justify-between items-center text-black mb-2">
         <h2 className="text-lg font-semibold m-auto">My Chats</h2>
       </div>
 
-      <form onSubmit={handleSearchSubmit} className="flex items-center mb-4">
+      <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 mb-4">
         <IoMdArrowRoundBack
           onClick={handlebackSearch}
-          className="h-8 w-10 bg-white text-black hover:bg-black hover:text-white rounded-full cursor-pointer"
+          className="h-9 w-10 bg-white text-black hover:bg-black hover:text-white rounded-full cursor-pointer flex-shrink-0"
         />
         <input
           value={searchInput}
@@ -137,13 +194,13 @@ export const SideMessageBar = () => {
         />
         <button
           type="submit"
-          className="bg-blue-500 text-white h-9 w-11 flex justify-center items-center rounded-full hover:bg-blue-600 transition ml-2"
+          className="bg-blue-500 text-white h-9 w-11 flex justify-center items-center rounded-full hover:bg-blue-600 transition"
         >
           <FaSearch />
         </button>
       </form>
 
-      <div className="space-y-2">
+      <div className="space-y-2 overflow-y-auto flex-1 pr-1">
         {(searchUser.length > 0 ? searchUser : chatUser).map((user) => (
           <div key={user._id}>
             <div
@@ -163,12 +220,11 @@ export const SideMessageBar = () => {
                 </div>
                 <p className="font-semibold">{user.username}</p>
               </div>
-              {newMessageUsers?.receiverId === authUser?._id &&
-                newMessageUsers?.senderId === user._id && (
-                  <div className="bg-green-500 text-black text-xs px-2 py-0.5 rounded-full">
-                    +1
-                  </div>
-                )}
+              {user.unread > 0 && (
+                <div className="bg-green-500 text-black text-xs px-2 py-0.5 rounded-full">
+                  +{user.unread}
+                </div>
+              )}
             </div>
           </div>
         ))}

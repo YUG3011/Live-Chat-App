@@ -3,15 +3,15 @@ import { VscAccount } from "react-icons/vsc";
 import { BiSend } from "react-icons/bi";
 import { LuMessageCircle } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import api from "../../utils/axios.js";
 import userConvorsation from "../../Zustand/useConvorsation";
 import { useAuth } from "../../context/AuthContext";
 import notify from "../../assets/sound/new-message-2-125765.mp3";
 import { usesocketContext } from "../../context/SocketContext";
 import { CiMenuKebab } from "react-icons/ci";
+import { IoMdArrowRoundBack } from "react-icons/io";
 
-export const MessageContainer = () => {
+export const MessageContainer = ({ onBackToList, showBackButton = false }) => {
   let lastShownDate = null;
   const {
     messages = [],
@@ -25,6 +25,12 @@ export const MessageContainer = () => {
   const [loading, setLoading] = useState(false);
   const [sendData, setSendData] = useState("");
   const lastMessageRef = useRef(null);
+
+  const handleBackToList = () => {
+    if (typeof onBackToList === "function") {
+      onBackToList();
+    }
+  };
 
   useEffect(() => {
     if (!socket) return;
@@ -89,9 +95,18 @@ export const MessageContainer = () => {
   };
 
   return (
-    <>
+    <div className="flex-1 w-full h-full">
       {!selectedConversation ? (
-        <div className="flex justify-center items-center h-full bg-white rounded-lg">
+        <div className="flex flex-col justify-center items-center h-full bg-white rounded-lg p-6 text-center">
+          {showBackButton && (
+            <button
+              type="button"
+              onClick={handleBackToList}
+              className="lg:hidden mb-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-600"
+            >
+              <IoMdArrowRoundBack className="h-4 w-4" /> Back to chats
+            </button>
+          )}
           <div className="text-gray-500 text-lg font-medium">
             Search Your Friends And Start Chat
           </div>
@@ -101,6 +116,15 @@ export const MessageContainer = () => {
           {/* Header */}
           <div className="flex items-center justify-between p-2.5 bg-white border-b">
             <div className="flex items-center gap-3">
+              {showBackButton && (
+                <button
+                  type="button"
+                  onClick={handleBackToList}
+                  className="lg:hidden bg-gray-200 p-2 rounded-full hover:bg-gray-300 transition"
+                >
+                  <IoMdArrowRoundBack className="h-4 w-4 text-gray-700" />
+                </button>
+              )}
               <button
                 onClick={() => navigate(`/profile/${authUser?._id}`)}
                 className="bg-gray-200 p-2 rounded-full hover:scale-105 transition"
@@ -203,6 +227,6 @@ export const MessageContainer = () => {
           </form>
         </div>
       )}
-    </>
+    </div>
   );
 };

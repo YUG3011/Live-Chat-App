@@ -48,8 +48,8 @@ export const Log = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#1f1c2c] to-[#928dab] px-4">
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-lg border border-white/30 rounded-3xl shadow-xl p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#1f1c2c] to-[#928dab] px-4 py-10">
+      <div className="w-full max-w-md bg-white/10 backdrop-blur-lg border border-white/30 rounded-3xl shadow-xl p-6 sm:p-8">
         <h2 className="text-3xl font-semibold text-white text-center mb-6">Login</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <input

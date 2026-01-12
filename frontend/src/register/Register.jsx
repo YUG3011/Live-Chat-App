@@ -62,8 +62,8 @@ export const Register = () => {
   };
 
   return (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#2e2e2e] via-[#121212] to-[#1a1a1a] px-4 ">
-    <div className="w-full max-w-md bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl px-6 py-6">
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#2e2e2e] via-[#121212] to-[#1a1a1a] px-4 py-10">
+    <div className="w-full max-w-md bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl px-6 py-6 sm:p-8">
 
       <h2 className="text-3xl font-bold text-white text-center mb-6">Register</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -115,7 +115,7 @@ export const Register = () => {
         />
 
         {/* Gender selection toggle-style */}
-        <div className="flex items-center justify-center gap-4 mt-3">
+        <div className="flex items-center justify-center gap-3 mt-3 flex-wrap">
           <button
             type="button"
             onClick={() => selectGender("male")}
