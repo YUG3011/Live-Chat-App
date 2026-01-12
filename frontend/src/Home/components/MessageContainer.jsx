@@ -43,7 +43,7 @@ export const MessageContainer = () => {
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
-  }, [Socket, authUser._id, setMessage]);
+  }, [socket, authUser._id, setMessage]);
 
   useEffect(() => {
     if (lastMessageRef.current) {
